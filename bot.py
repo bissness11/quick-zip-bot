@@ -79,9 +79,9 @@ async def zip_handler(client: Client, message: Message):
 for file in files:
     # Download file
         messages = [await client.get_messages(message.chat.id, msg_id) for msg_id in tasks[message.from_user.id]]
-            await download_file(messages, root)
-            progress += 1
-            await progress_msg.edit_text(f'Downloading files... ({progress / total_files * 100:.2f}%)')
+        await download_file(messages, root)
+        progress += 1
+        await progress_msg.edit_text(f'Downloading files... ({progress / total_files * 100:.2f}%)')
 
     # Zip files
         progress = 0
