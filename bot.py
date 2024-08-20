@@ -84,7 +84,7 @@ for file in files:
         await progress_msg.edit_text(f'Downloading files... ({progress / total_files * 100:.2f}%)')
 
     # Zip files
-    progress = 0
+        progress = 0
     for file in os.listdir(root):
         await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, root / file))
         progress += 1
