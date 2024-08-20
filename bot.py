@@ -101,52 +101,55 @@ async def zip_handler(client: Client, message: Message):
     if len(message.command) < 2:
         await message.reply_text('Please provide a name for the zip file.')
         return
-
     if message.from_user.id not in tasks:
         await message.reply_text('You must use /add first.')
         return
-
     if not tasks[message.from_user.id]:
         await message.reply_text('You must send me some files first.')
         return
-
     messages = [await client.get_messages(message.chat.id, msg_id) for msg_id in tasks[message.from_user.id]]
     zip_size = sum([msg.document.file_size for msg in messages if msg.document])
-
     if zip_size > 1024 * 1024 * 2000:  # zip_size > 1.95 GB approximately
         await message.reply_text('Total filesize must not exceed 2.0 GB.')
         return
-
     root = STORAGE / f'{message.from_user.id}/'
     zip_name = root / (message.command[1] + '.zip')
-
     # Create root directory if it doesn't exist
     root.mkdir(parents=True, exist_ok=True)
 
     # Create a progress message
-    progress_msg = await message.reply_text('Zipping files... (0%)')
+    progress_message = await message.reply_text(
+        f'Zipping files...\nTotal files: {len(messages)}\nTotal size: {zip_size / (1024 * 1024):.2f} MB',
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton('Show Progress', callback_data='show_progress')]]
+        )
+    )
 
-    # Download files with progress
-    downloaded_files = []
-    async for downloaded_file in download_files(messages, root=root, progress_message=progress_msg):
-        downloaded_files.append(downloaded_file)
-
-    # Zip files with progress
-    total_files = len(downloaded_files)
-    progress = 0
-    for file in downloaded_files:
+    async for file in download_files(messages, CONC_MAX, root, progress_message):
         await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, file))
-        progress += 1
-        await progress_msg.edit_text(f'Zipping files... ({progress / total_files * 100:.2f}%)')
 
-    # Add a button to show progress
-    inline_keyboard = [[InlineKeyboardButton("Show Progress", callback_data='show_progress')]]
-    reply_markup = InlineKeyboardMarkup(inline_keyboard)
-    await progress_msg.edit_text(f'Zipping files... (100%)', reply_markup=reply_markup)
+    await progress_message.edit_text(
+        f'Zip file created: {zip_name.name}\nTotal files: {len(messages)}\nTotal size: {zip_size / (1024 * 1024):.2f} MB',
+        reply_markup=None
+    )
+    await message.reply_document(zip_name)
+    await get_running_loop().run_in_executor(None, rmtree, root)
+    tasks.pop(message.from_user.id)
 
-    # Clear the tasks for the user
-    tasks[message.from_user.id] = []
-
+@bot.on_callback_query(filters.callback_data('show_progress'))
+async def show_progress_callback(client: Client, callback_query: CallbackQuery):
+    # Get the progress message and update it with the current progress
+    progress_message = callback_query.message
+    zip_size = sum([msg.document.file_size for msg in messages if msg.document])
+    compressed_size = os.path.getsize(str(zip_name))
+    progress_percentage = (compressed_size / zip_size) * 100
+    await progress_message.edit_text(
+        f'Zipping files...\nTotal files: {len(messages)}\nTotal size: {zip_size / (1024 * 1024):.2f} MB\nProgress: {progress_percentage:.2f}%',
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton('Show Progress', callback_data='show_progress')]]
+        )
+    )
+    await callback_query.answer()
 
 @bot.on_message(filters.command('help'))
 async def start_handler(client: Client, message: Message):
