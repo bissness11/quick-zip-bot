@@ -8,7 +8,6 @@ import aiofiles
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 from pyrogram import Client, filters
-from pyrogram import Progress
 from utils import download_files, add_to_zip  # Assuming these are compatible with Pyrogram
 import asyncio
 # Load environment variables
