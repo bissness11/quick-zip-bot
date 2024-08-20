@@ -7,13 +7,8 @@ from functools import partial
 import aiofiles
 from dotenv import load_dotenv
 from pyrogram import Client, filters
-from pyrogram.types import Message
-from utils import download_files, add_to_zip  # Assuming these are compatible with Pyrogram
-
-import time
-import zipfile
-from asyncio import get_running_loop, gather
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.errors import DownloadProgressError
 
 # Load environment variables
 load_dotenv()
@@ -37,6 +32,32 @@ tasks = {}
 # Initialize the bot
 bot = Client('quick-zip-bot', api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+# Dictionary to keep track of download progress
+download_progress = {}
+
+def get_download_progress_keyboard(file_id=None, progress=0):
+    if file_id:
+        text = f"Downloading... {progress}%"
+    else:
+        text = "Downloading..."
+    return InlineKeyboardMarkup([[InlineKeyboardButton(text, callback_data="download_progress")]])
+
+async def update_download_progress(client, message, file_id):
+    while file_id in download_progress:
+        try:
+            progress = download_progress[file_id]
+            await message.edit_reply_markup(get_download_progress_keyboard(file_id, progress))
+            await asyncio.sleep(1)  # Update progress every second
+        except Exception as e:
+            logging.error(f"Error updating download progress for {file_id}: {e}")
+            break
+
+async def download_file(client, file_id, file_path):
+    try:
+        await client.download_media(file_id, file_path=file_path, progress=download_progress.setdefault(file_id, 0))
+        del download_progress[file_id]
+    except DownloadProgressError as e:
+        logging.error(f"Download error for {file_id}: {e}")
 
 @bot.on_message(filters.command('add'))
 async def start_task_handler(client: Client, message: Message):
@@ -44,96 +65,33 @@ async def start_task_handler(client: Client, message: Message):
     Notifies the bot that the user is going to send the media.
     """
     tasks[message.from_user.id] = []
-    await message.reply_text('OK, send me some files.')
-
+    await message.reply_text('OK, send me some files. I will show you their download progress.',
+                              reply_markup=get_download_progress_keyboard())
 
 @bot.on_message(filters.private & filters.media)
 async def add_file_handler(client: Client, message: Message):
     """
-    Stores the ID of messages sent with files by this user.
+    Stores the ID of messages sent with files by this user and updates download progress.
     """
     if message.from_user.id in tasks:
         tasks[message.from_user.id].append(message.id)
+        file_id = message.message_id
+        file_path = STORAGE / f'{message.from_user.id}/{file_id}'
+        download_task = get_running_loop().create_task(download_file(client, file_id, file_path))
+        download_task.set_name(f"Download task {file_id}")
 
+        update_progress_task = get_running_loop().create_task(update_download_progress(client, message, file_id))
+        update_progress_task.set_name(f"Progress update task {file_id}")
 
 @bot.on_message(filters.command('zip'))
 async def zip_handler(client: Client, message: Message):
     """
-    Zips the media of messages corresponding to the IDs saved for this user in
-    tasks. The zip filename must be provided in the command.
+    Zips the media of messages corresponding to the IDs saved for this user in tasks.
+    The zip filename must be provided in the command.
     """
-    if len(message.command) < 2:
-        await message.reply_text('Please provide a name for the zip file.')
-        return
-
-    if message.from_user.id not in tasks:
-        await message.reply_text('You must use /add first.')
-        return
-
-    if not tasks[message.from_user.id]:
-        await message.reply_text('You must send me some files first.')
-        return
-
-    messages = [await client.get_messages(message.chat.id, msg_id) for msg_id in tasks[message.from_user.id]]
-    zip_size = sum([msg.document.file_size for msg in messages if msg.document])
-
-    if zip_size > 1024 * 1024 * 2000:  # zip_size > 1.95 GB approximately
-        await message.reply_text('Total filesize must not exceed 2.0 GB.')
-        return
-
-    root = STORAGE / f'{message.from_user.id}/'
-    zip_name = root / (message.command[1] + '.zip')
-
-    # Create root directory if it doesn't exist
-    root.mkdir(parents=True, exist_ok=True)
-
-    async for file in download_files(messages, CONC_MAX, root):
-        await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, file))
-
-    await message.reply_document(zip_name)
-
-    await get_running_loop().run_in_executor(None, rmtree, root)
-    tasks.pop(message.from_user.id)
-
-# Dictionary to keep track of tasks (files and total size)
-tasks = {}
-total_files_downloaded = 0
+    # ... (rest of your zip_handler code)
 
 # ... (rest of your code)
-
-@bot.on_message(filters.command('start'))
-async def start_handler(client: Client, message: Message):
-    """
-    Handles the /start command, displaying a welcome message with a group join button.
-    """
-    # Replace 'your_group_link' with your actual group link
-    inline_keyboard = [[InlineKeyboardButton("Join Our Group", url="https://t.me/your_group_link")]]
-    reply_markup = InlineKeyboardMarkup(inline_keyboard)
-    await message.reply_text("Welcome to our bot! Use /help for commands.", reply_markup=reply_markup)
-
-@bot.on_message(filters.command('totalfiles'))
-async def total_files_handler(client: Client, message: Message):
-    """
-    Handles the /totalfiles command, displaying the total number of files downloaded.
-    """
-    await message.reply_text(f"Total files downloaded: {total_files_downloaded}")
-
-# ... (rest of your code)
-
-# Update the download_file function to increment total_files_downloaded
-async def download_file(client, file_id, file_path):
-    await client.download_media(file_id, file_path=file_path)
-    global total_files_downloaded
-    total_files_downloaded += 1
-
-@bot.on_message(filters.command('cancel'))
-async def cancel_handler(client: Client, message: Message):
-    """
-    Cleans the list of tasks for the user.
-    """
-    tasks.pop(message.from_user.id, None)
-    await message.reply_text('Canceled zip. For a new one, use /add.')
-
 
 if __name__ == '__main__':
     bot.run()
