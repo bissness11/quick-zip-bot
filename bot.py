@@ -94,16 +94,17 @@ async def zip_handler(client: Client, message: Message):
 
     # Create root directory if it doesn't exist
     root.mkdir(parents=True, exist_ok=True)
-    # ... (rest of your code remains the same)
 
     # Create a progress message
     progress_msg = await message.reply_text('Zipping files... (0%)')
 
     # Zip files with progress
-    total_files = len(messages)
+    total_files = len(tasks[message.from_user.id])
     progress = 0
-    for file in os.listdir(root):
-        await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, root / file))
+    for msg_id in tasks[message.from_user.id]:
+        msg = await client.get_messages(message.chat.id, msg_id)
+        await download_files(msg, root)
+        await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, root / msg.document.file_name))
         progress += 1
         await progress_msg.edit_text(f'Zipping files... ({progress / total_files * 100:.2f}%)')
 
@@ -112,23 +113,8 @@ async def zip_handler(client: Client, message: Message):
     reply_markup = InlineKeyboardMarkup(inline_keyboard)
     await progress_msg.edit_text(f'Zipping files... (100%)', reply_markup=reply_markup)
 
-    # ... (rest of your code remains the same)
-
-@bot.on_callback_query(filters.regex('show_progress'))
-async def show_progress(client: Client, callback_query: CallbackQuery):
-    # Get the progress message
-    progress_msg = callback_query.message
-
-    # Get the current progress
-    progress_text = progress_msg.text
-    progress = float(progress_text.split('(')[1].split('%')[0])
-
-    # Calculate the total file size of the zip file
-    total_size = sum([msg.document.file_size for msg in messages if msg.document])
-    total_size_mb = total_size / (1024 * 1024)  # Convert bytes to MB
-
-    # Show the progress and total file size
-    await progress_msg.edit_text(f'Zipping files... ({progress:.2f}%) - Total size: {total_size_mb:.2f} MB')
+    # Clear the tasks for the user
+    tasks[message.from_user.id] = []
 
 @bot.on_message(filters.command('help'))
 async def start_handler(client: Client, message: Message):
