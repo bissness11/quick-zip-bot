@@ -63,13 +63,14 @@ async def add_file_handler(client: Client, message: Message):
 
 
 
+
 @bot.on_message(filters.command('zip'))
 async def zip_handler(client: Client, message: Message):
     # ... (rest of your code remains the same)
 
+    total_files = len(messages)
     progress_msg = await message.reply_text('Zipping files... (0%)', progress=True, progress_args=(0, total_files))
     progress = 0
-    total_files = len(messages)
 
     async for file in download_files(messages, CONC_MAX, root):
         await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, file))
@@ -80,6 +81,7 @@ async def zip_handler(client: Client, message: Message):
     await message.reply_document(zip_name)
     await get_running_loop().run_in_executor(None, rmtree, root)
     tasks.pop((message.from_user.id))
+
 
 
 @bot.on_message(filters.command('start'))
