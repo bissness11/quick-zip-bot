@@ -67,7 +67,7 @@ async def add_file_handler(client: Client, message: Message):
 @bot.on_message(filters.command('zip'))
 async def zip_handler(client: Client, message: Message):
     # ... (rest of your code remains the same)
-
+    root = STORAGE / f'{message.from_user.id}/'
     zip_name = root / (message.command[1] + '.zip')
     progress_msg = await message.reply_text('Zipping files... (0%)', reply_markup=InlineKeyboardMarkup([
         [InlineKeyboardButton('Show Progress', callback_data='show_progress')]
