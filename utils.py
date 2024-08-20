@@ -15,6 +15,7 @@ async def download_files(
 ) -> Iterator[Path]:
     """
     Downloads the file if present for each message.
+
     Args:
         msgs: list of messages from where download the files.
         conc_max: max amount of files to be downloaded concurrently.
@@ -25,6 +26,7 @@ async def download_files(
         Yields the path of every file that is downloaded.
     """
     root = root or Path('./')
+
     next_msg_index = 0
     pending = set()
     while next_msg_index < len(msgs) or pending:
@@ -36,12 +38,13 @@ async def download_files(
                 pass
             else:
                 start_time = time.time()
-                file_path = root / (m.document.file_name or 'no_name')
-                task = m.download(file_path=str(file_path))
+                task = m.download(file_name=str(root / (m.document.file_name or 'no_name')))
                 pending.add(task)
                 next_msg_index += 1
+
         if pending:
             done, pending = await wait(pending, return_when=FIRST_COMPLETED)
+
             for task in done:
                 path = await task
                 if path:
@@ -49,7 +52,7 @@ async def download_files(
                         elapsed_time = time.time() - start_time
                         download_speed = (Path(path).stat().st_size / elapsed_time) / (1024 * 1024)  # in MB/s
                         await progress_message.edit_text(
-                            f'Downloaded {Path(path).name} at {download_speed:.2f} MB/s'
+                            f'Downloaded {path.name} at {download_speed:.2f} MB/s'
                         )
                     yield Path(path)
 
