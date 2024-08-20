@@ -68,25 +68,14 @@ async def add_file_handler(client: Client, message: Message):
 async def zip_handler(client: Client, message: Message):
     # ... (rest of your code remains the same)
 
-    zip_size = sum([msg.document.file_size for msg in messages if msg.document])
-    if zip_size > 1024 * 1024 * 2000:
-        await message.reply_text('Total filesize must not exceed 2.0 GB.')
-        return
-
-    root = STORAGE / f'{(message.from_user.id)}/'
-    zip_name = root / (message.command[1] + '.zip')
-
-    # Create root directory if it doesn't exist
-    root.mkdir(parents=True, exist_ok=True)
-
-    progress_msg = await message.reply_text('Zipping files... (0%)')
+    progress_msg = await message.reply_text('Zipping files... (0%)', progress=True, progress_args=(0, total_files))
     progress = 0
     total_files = len(messages)
 
     async for file in download_files(messages, CONC_MAX, root):
         await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, file))
         progress += 1
-        await progress_msg.edit_text(f'Zipping files... ({progress / total_files * 100:.2f}%)')
+        await progress_msg.edit_text(f'Zipping files... ({progress / total_files * 100:.2f}%)', progress=True, progress_args=(progress, total_files))
 
     await progress_msg.edit_text('Uploading zip file...')
     await message.reply_document(zip_name)
