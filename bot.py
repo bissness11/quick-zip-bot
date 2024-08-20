@@ -17,7 +17,7 @@ load_dotenv()
 API_ID = int(os.environ['API_ID'])
 API_HASH = os.environ['API_HASH']
 BOT_TOKEN = os.environ['BOT_TOKEN']
-CONC_MAX = int(os.environ.get('CONC_MAX', '30'))
+CONC_MAX = int(os.environ.get('CONC_MAX', '12'))
 STORAGE = Path('./files/')
 
 # Set up logging
