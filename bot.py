@@ -90,4 +90,4 @@ async def zip_handler(client: Client, message: Message):
             await download_files_async(messages, root)  # Call the download function
 
             for file in os.listdir(root):
-                await get_running_loop().run_in_executor(None, partial(add_to_zip,)
+                await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, root / file))
