@@ -91,15 +91,15 @@ for file in files:
             await progress_msg.edit_text(f'Zipping files... ({progress / total_files * 100:.2f}%)')
 
     # Upload zip file
-    await progress_msg.edit_text('Uploading zip file...')
-    await message.reply_document(zip_name)
-    await get_running_loop().run_in_executor(None, rmtree, root)
-    tasks.pop(((message.from_user.id)))
-    @bot.on_callback_query(filters.regex('show_progress'))
-    async def show_progress(client: Client, callback_query: CallbackQuery):
-        await progress_callback()
+        await progress_msg.edit_text('Uploading zip file...')
+        await message.reply_document(zip_name)
+        await get_running_loop().run_in_executor(None, rmtree, root)
+        tasks.pop(((message.from_user.id)))
+        @bot.on_callback_query(filters.regex('show_progress'))
+        async def show_progress(client: Client, callback_query: CallbackQuery):
+            await progress_callback()
 
-    await progress_callback()
+        await progress_callback()
 
 @bot.on_message(filters.command('start'))
 async def start_handler(client: Client, message: Message):
