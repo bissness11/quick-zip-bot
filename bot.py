@@ -46,8 +46,9 @@ async def handle_media(client: Client, message: Message):
         media = message.document or message.video or message.audio
         tasks[user_id].append(media)
         total_size = sum(file.file_size for file in tasks[user_id])
+        total_size_mb = total_size / (1024 * 1024)  # Convert bytes to MB
         await message.reply_text(
-            f"Received {len(tasks[user_id])} files, total size: {total_size} bytes"
+            f"Received {len(tasks[user_id])} files, total size: {total_size_mb} Mbs"
         )
 
 
