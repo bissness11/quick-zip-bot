@@ -2,7 +2,6 @@ import os
 import logging
 from pathlib import Path
 from shutil import rmtree
-from asyncio import get_running_loop
 from functools import partial
 
 import aiofiles
@@ -10,6 +9,11 @@ from dotenv import load_dotenv
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from utils import download_files, add_to_zip  # Assuming these are compatible with Pyrogram
+
+import time
+import zipfile
+from asyncio import get_running_loop, gather
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 # Load environment variables
 load_dotenv()
@@ -91,6 +95,36 @@ async def zip_handler(client: Client, message: Message):
     await get_running_loop().run_in_executor(None, rmtree, root)
     tasks.pop(message.from_user.id)
 
+# Dictionary to keep track of tasks (files and total size)
+tasks = {}
+total_files_downloaded = 0
+
+# ... (rest of your code)
+
+@bot.on_message(filters.command('start'))
+async def start_handler(client: Client, message: Message):
+    """
+    Handles the /start command, displaying a welcome message with a group join button.
+    """
+    # Replace 'your_group_link' with your actual group link
+    inline_keyboard = [[InlineKeyboardButton("Join Our Group", url="https://t.me/your_group_link")]]
+    reply_markup = InlineKeyboardMarkup(inline_keyboard)
+    await message.reply_text("Welcome to our bot! Use /help for commands.", reply_markup=reply_markup)
+
+@bot.on_message(filters.command('totalfiles'))
+async def total_files_handler(client: Client, message: Message):
+    """
+    Handles the /totalfiles command, displaying the total number of files downloaded.
+    """
+    await message.reply_text(f"Total files downloaded: {total_files_downloaded}")
+
+# ... (rest of your code)
+
+# Update the download_file function to increment total_files_downloaded
+async def download_file(client, file_id, file_path):
+    await client.download_media(file_id, file_path=file_path)
+    global total_files_downloaded
+    total_files_downloaded += 1
 
 @bot.on_message(filters.command('cancel'))
 async def cancel_handler(client: Client, message: Message):
