@@ -8,7 +8,6 @@ import aiofiles
 from dotenv import load_dotenv
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import DownloadProgressError
 
 # Load environment variables
 load_dotenv()
