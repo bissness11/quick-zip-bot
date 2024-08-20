@@ -121,7 +121,7 @@ async def zip_handler(client: Client, message: Message):
     progress_message = await message.reply_text(
         f'Zipping files...\nTotal files: {len(messages)}\nTotal size: {zip_size / (1024 * 1024):.2f} MB',
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton('Show Progress', filters.regex='show_progress')]]
+            [[InlineKeyboardButton('Show Progress', regex='show_progress')]]
         )
     )
 
