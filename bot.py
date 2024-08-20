@@ -8,6 +8,7 @@ import aiofiles
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 from pyrogram import Client, filters
+from pyrogram import Progress
 from utils import download_files, add_to_zip  # Assuming these are compatible with Pyrogram
 import asyncio
 # Load environment variables
@@ -62,44 +63,36 @@ async def add_file_handler(client: Client, message: Message):
         tasks[message.from_user.id].append(message.id)
 
 
+
 @bot.on_message(filters.command('zip'))
 async def zip_handler(client: Client, message: Message):
-    """
-    Zips the media of messages corresponding to the IDs saved for this user in
-    tasks. The zip filename must be provided in the command.
-    """
-    if len(message.command) < 2:
-        await message.reply_text('Please provide a name for the zip file.')
-        return
+    # ... (rest of your code remains the same)
 
-    if message.from_user.id not in tasks:
-        await message.reply_text('You must use /add first.')
-        return
-
-    if not tasks[message.from_user.id]:
-        await message.reply_text('You must send me some files first.')
-        return
-
-    messages = [await client.get_messages(message.chat.id, msg_id) for msg_id in tasks[message.from_user.id]]
     zip_size = sum([msg.document.file_size for msg in messages if msg.document])
-
-    if zip_size > 1024 * 1024 * 2000:  # zip_size > 1.95 GB approximately
+    if zip_size > 1024 * 1024 * 2000:
         await message.reply_text('Total filesize must not exceed 2.0 GB.')
         return
 
-    root = STORAGE / f'{message.from_user.id}/'
+    root = STORAGE / f'{(message.from_user.id)}/'
     zip_name = root / (message.command[1] + '.zip')
 
     # Create root directory if it doesn't exist
     root.mkdir(parents=True, exist_ok=True)
 
+    progress_msg = await message.reply_text('Zipping files... (0%)')
+    progress = 0
+    total_files = len(messages)
+
     async for file in download_files(messages, CONC_MAX, root):
         await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, file))
+        progress += 1
+        await progress_msg.edit_text(f'Zipping files... ({progress / total_files * 100:.2f}%)')
 
+    await progress_msg.edit_text('Uploading zip file...')
     await message.reply_document(zip_name)
-
     await get_running_loop().run_in_executor(None, rmtree, root)
-    tasks.pop(message.from_user.id)
+    tasks.pop((message.from_user.id))
+
 
 @bot.on_message(filters.command('start'))
 async def start_handler(client: Client, message: Message):
