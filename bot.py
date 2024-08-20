@@ -76,9 +76,10 @@ async def zip_handler(client: Client, message: Message):
         [InlineKeyboardButton('Show Progress', callback_data='show_progress')]
     ]))
 
-    for file in files:
-        # Download file
-        await download_file(file, root)
+for file in files:
+    # Download file
+    async for downloaded_file in download_files(messages, root):
+        await download_file(downloaded_file, root)
         progress += 1
         await progress_msg.edit_text(f'Downloading files... ({progress / total_files * 100:.2f}%)')
 
