@@ -9,7 +9,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 from pyrogram import Client, filters
 from utils import download_files, add_to_zip  # Assuming these are compatible with Pyrogram
-
+import asyncio
 # Load environment variables
 load_dotenv()
 
@@ -36,19 +36,20 @@ bot = Client('quick-zip-bot', api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TO
 @bot.on_message(filters.command('add'))
 async def start_task_handler(client: Client, message: Message):
     """Notifies the bot that the user is going to send the media."""
-    tasks[(message.from_user.id)] = []
+    tasks[((message.from_user.id))] = []
     await message.reply_text('OK, send me some files.')
 
 @bot.on_message(filters.media)
 async def handle_media(client: Client, message: Message):
-    user_id = (message.from_user.id)
+    user_id = ((message.from_user.id))
     if user_id in tasks:
         media = message.document or message.video or message.audio
         tasks[user_id].append(media)
         total_size = sum(file.file_size for file in tasks[user_id])
         total_size_mb = total_size / (1024 * 1024)  # Convert bytes to MB
+        await asyncio.sleep(3)  # Delay for 3 seconds
         await message.reply_text(
-            f"Received {len(tasks[user_id])} files, total size: {total_size_mb} Mbs"
+            f"Received {len(tasks[user_id])} files, total size: {total_size_mb:.2f} MB"
         )
 
 
