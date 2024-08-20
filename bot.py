@@ -74,28 +74,28 @@ async def zip_handler(client: Client, message: Message):
     ]))
 
     async def progress_callback():
-        progress = 0
-        messages = [await client.get_messages((message.chat.id), msg_id) for msg_id in tasks[(message.from_user.id)]]
-        total_files = len(messages)
-        for file in messages:
-            # Download file
-            await download_file(file, root)
-            progress += 1
-            await progress_msg.edit_text(f'Downloading files... ({progress / total_files * 100:.2f}%)')
-        
-        # Zip files
-        progress = 0
-        for file in os.listdir(root):
-            await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, root / file))
-            progress += 1
-            await progress_msg.edit_text(f'Zipping files... ({progress / total_files * 100:.2f}%)')
-        
-        # Upload zip file
-        await progress_msg.edit_text('Uploading zip file...')
-        await message.reply_document(zip_name)
-        await get_running_loop().run_in_executor(None, rmtree, root)
-        tasks.pop((message.from_user.id))
+    progress = 0
+    files = tasks[((message.from_user.id))]
+    total_files = len(files)
 
+    for file in files:
+        # Download file
+        await download_file(file, root)
+        progress += 1
+        await progress_msg.edit_text(f'Downloading files... ({progress / total_files * 100:.2f}%)')
+
+    # Zip files
+    progress = 0
+    for file in os.listdir(root):
+        await get_running_loop().run_in_executor(None, partial(add_to_zip, zip_name, root / file))
+        progress += 1
+        await progress_msg.edit_text(f'Zipping files... ({progress / total_files * 100:.2f}%)')
+
+    # Upload zip file
+    await progress_msg.edit_text('Uploading zip file...')
+    await message.reply_document(zip_name)
+    await get_running_loop().run_in_executor(None, rmtree, root)
+    tasks.pop(((message.from_user.id)))
     @bot.on_callback_query(filters.regex('show_progress'))
     async def show_progress(client: Client, callback_query: CallbackQuery):
         await progress_callback()
