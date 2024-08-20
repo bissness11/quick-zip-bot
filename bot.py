@@ -146,7 +146,7 @@ async def show_progress_callback(client: Client, callback_query: CallbackQuery):
     await progress_message.edit_text(
         f'Zipping files...\nTotal files: {len(messages)}\nTotal size: {zip_size / (1024 * 1024):.2f} MB\nProgress: {progress_percentage:.2f}%',
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton('Show Progress', filters.callback_data ='show_progress')]]
+            [[InlineKeyboardButton('Show Progress', callback_data ='show_progress')]]
         )
     )
     await callback_query.answer()
