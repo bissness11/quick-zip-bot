@@ -45,9 +45,9 @@ async def handle_media(client: Client, message: Message):
     if user_id in tasks:
         media = message.document or message.video or message.audio
         tasks[user_id].append(media)
+        await asyncio.sleep(3)  # Delay for 3 seconds
         total_size = sum(file.file_size for file in tasks[user_id])
         total_size_mb = total_size / (1024 * 1024)  # Convert bytes to MB
-        await asyncio.sleep(3)  # Delay for 3 seconds
         await message.reply_text(
             f"Received {len(tasks[user_id])} files, total size: {total_size_mb:.2f} MB"
         )
@@ -75,6 +75,7 @@ async def zip_handler(client: Client, message: Message):
 
     async def progress_callback():
         progress = 0
+        messages = [await client.get_messages((message.from_user.id), msg_id) for msg_id in tasks[(message.from_user.id)]]
         total_files = len(messages)
         for file in messages:
             # Download file
