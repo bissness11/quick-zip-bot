@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from utils import download_files, add_to_zip  # Assuming these are compatible with Pyrogram
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 # Load environment variables
 load_dotenv()
