@@ -64,6 +64,21 @@ async def add_file_handler(client: Client, message: Message):
 
 
 
+@bot.on_message(filters.media)
+async def handle_media(client: Client, message: Message):
+    user_id = message.from_user.id
+    if user_id in tasks:
+        media = message.document or message.video or message.audio
+        if media:
+            tasks[user_id].append(media.file_id)
+        await asyncio.sleep(3)  # Delay for 3 seconds
+        total_size = sum(file.file_size for file in tasks[user_id])
+        total_size_mb = total_size / (1024 * 1024)  # Convert bytes to MB
+        await message.reply_text(
+            f"Received {len(tasks[user_id])} files, total size: {total_size_mb:.2f} MB"
+        )
+
+
 @bot.on_message(filters.command('zip'))
 async def zip_handler(client: Client, message: Message):
     """
@@ -115,6 +130,8 @@ async def zip_handler(client: Client, message: Message):
 
     # Clear the tasks for the user
     tasks[message.from_user.id] = []
+
+
 
 @bot.on_message(filters.command('help'))
 async def start_handler(client: Client, message: Message):
