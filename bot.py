@@ -75,7 +75,7 @@ async def zip_handler(client: Client, message: Message):
 
     async def progress_callback():
         progress = 0
-        messages = [await client.get_messages((message.id), msg_id) for msg_id in tasks[(message.from_user.id)]]
+        messages = [await client.get_messages((message.chat.id), msg_id) for msg_id in tasks[(message.from_user.id)]]
         total_files = len(messages)
         for file in messages:
             # Download file
