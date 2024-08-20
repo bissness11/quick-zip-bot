@@ -136,7 +136,7 @@ async def zip_handler(client: Client, message: Message):
     await get_running_loop().run_in_executor(None, rmtree, root)
     tasks.pop(message.from_user.id)
 
-@bot.on_callback_query(filters.callback_data ('show_progress'))
+@bot.on_callback_query(filters.regex('show_progress'))
 async def show_progress_callback(client: Client, callback_query: CallbackQuery):
     # Get the progress message and update it with the current progress
     progress_message = callback_query.message
@@ -146,7 +146,7 @@ async def show_progress_callback(client: Client, callback_query: CallbackQuery):
     await progress_message.edit_text(
         f'Zipping files...\nTotal files: {len(messages)}\nTotal size: {zip_size / (1024 * 1024):.2f} MB\nProgress: {progress_percentage:.2f}%',
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton('Show Progress', callback_data ='show_progress')]]
+            [[InlineKeyboardButton('Show Progress', callback_data='show_progress')]]
         )
     )
     await callback_query.answer()
