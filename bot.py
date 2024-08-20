@@ -74,9 +74,9 @@ async def zip_handler(client: Client, message: Message):
     ]))
 
     async def progress_callback():
-    progress = 0
-    files = tasks[((message.from_user.id))]
-    total_files = len(files)
+        progress = 0
+        files = tasks[((message.from_user.id))]
+        total_files = len(files)
 
     for file in files:
         # Download file
