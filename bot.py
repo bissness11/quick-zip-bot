@@ -36,12 +36,12 @@ bot = Client('quick-zip-bot', api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TO
 @bot.on_message(filters.command('add'))
 async def start_task_handler(client: Client, message: Message):
     """Notifies the bot that the user is going to send the media."""
-    tasks[(link unavailable)] = []
+    tasks[(message.from_user.id)] = []
     await message.reply_text('OK, send me some files.')
 
 @bot.on_message(filters.media)
 async def handle_media(client: Client, message: Message):
-    user_id = (link unavailable)
+    user_id = (message.from_user.id)
     if user_id in tasks:
         media = message.document or message.video or message.audio
         tasks[user_id].append(media)
