@@ -91,6 +91,26 @@ async def zip_handler(client: Client, message: Message):
     await get_running_loop().run_in_executor(None, rmtree, root)
     tasks.pop(message.from_user.id)
 
+@bot.on_message(filters.command('start'))
+async def start_handler(client: Client, message: Message):
+    """
+    Handles the /start command, displaying a welcome message with a group join button.
+    """
+    # Replace 'your_group_link' with your actual group link
+    inline_keyboard = [[InlineKeyboardButton("Join Our Group", url="https://t.me/your_group_link")]]
+    reply_markup = InlineKeyboardMarkup(inline_keyboard)
+    await message.reply_text("Welcome to our bot! Use /help for commands.", reply_markup=reply_markup)
+
+@bot.on_message(filters.command('help'))
+async def start_handler(client: Client, message: Message):
+    """
+    Handles the /start command, displaying a welcome message with a group join button.
+    """
+    # Replace 'your_group_link' with your actual group link
+    inline_keyboard = [[InlineKeyboardButton("Join Our Channel", url="https://t.me/animecolony")]]
+    reply_markup = InlineKeyboardMarkup(inline_keyboard)
+    await message.reply_text("Welcome to our bot! Available commands.\n /start \n /help \n /add (send before Adding files \n /zip (/zip filename of the zip file without extension)) \n", reply_markup=reply_markup)
+
 
 @bot.on_message(filters.command('cancel'))
 async def cancel_handler(client: Client, message: Message):
