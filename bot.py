@@ -13,7 +13,7 @@ import asyncio
 # Load environment variables
 load_dotenv()
 
-API_ID = int(os.environ['API_ID','6534707'])
+API_ID = int(os.environ.get['API_ID','6534707'])
 API_HASH = os.environ['API_HASH','4bcc61d959a9f403b2f20149cbbe627a']
 BOT_TOKEN = os.environ['BOT_TOKEN','5399493649:AAHTy5--Uo_Gv26TzWhPkT85nztS2WxnX2c']
 CONC_MAX = int(os.environ.get('CONC_MAX', 24))
